@@ -1,24 +1,56 @@
-import { Plus, Send } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Send, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { orders, clients, orderStatusLabels, type OrderStatus } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { exportToCsv } from "@/lib/exportCsv";
 import { cn } from "@/lib/utils";
+
+type OrderStatus = "borrador" | "confirmado" | "preparando" | "despachado" | "pagado";
+
+const orderStatusLabels: Record<OrderStatus, string> = {
+  borrador: "Borrador", confirmado: "Confirmado", preparando: "Preparando",
+  despachado: "Despachado", pagado: "Pagado",
+};
+
+type Order = {
+  id: string; client_id: string | null; status: OrderStatus;
+  total: number | null; created_at: string;
+  clients?: { name: string } | null;
+};
+
+type Client = {
+  id: string; name: string; rut: string | null; email: string | null;
+  city: string | null; total_purchases: number | null; last_order_date: string | null;
+};
 
 function statusColor(status: OrderStatus) {
   const map: Record<OrderStatus, string> = {
-    draft: "bg-muted text-muted-foreground",
-    confirmed: "bg-chart-2/10 text-chart-2",
-    preparing: "bg-warning/10 text-accent-foreground",
-    dispatched: "bg-primary/10 text-primary",
-    paid: "bg-primary text-primary-foreground",
+    borrador: "bg-muted text-muted-foreground",
+    confirmado: "bg-chart-2/10 text-chart-2",
+    preparando: "bg-warning/10 text-accent-foreground",
+    despachado: "bg-primary/10 text-primary",
+    pagado: "bg-primary text-primary-foreground",
   };
   return map[status];
 }
 
 export default function Orders() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+
+  useEffect(() => {
+    supabase.from("orders").select("*, clients(name)").order("created_at", { ascending: false }).then(({ data }) => {
+      setOrders((data as any) || []);
+    });
+    supabase.from("clients").select("*").order("name").then(({ data }) => {
+      setClients((data as Client[]) || []);
+    });
+  }, []);
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -26,7 +58,12 @@ export default function Orders() {
           <h1 className="font-heading text-2xl font-bold">Pedidos & Clientes</h1>
           <p className="text-sm text-muted-foreground">{orders.length} pedidos · {clients.length} clientes</p>
         </div>
-        <Button size="sm"><Plus className="h-4 w-4 mr-1" />Nuevo Pedido</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv("pedidos", orders.map(o => ({ ID: o.id, Cliente: o.clients?.name, Estado: o.status, Total: o.total, Fecha: o.created_at })))}>
+            <Download className="h-4 w-4 mr-1" />Exportar
+          </Button>
+          <Button size="sm"><Plus className="h-4 w-4 mr-1" />Nuevo Pedido</Button>
+        </div>
       </div>
 
       <Tabs defaultValue="orders">
@@ -43,35 +80,32 @@ export default function Orders() {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Cliente</TableHead>
-                    <TableHead>Ítems</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead>Fecha</TableHead>
-                    <TableHead>Vence</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {orders.map((o) => (
                     <TableRow key={o.id} className="cursor-pointer">
-                      <TableCell className="font-mono text-xs">{o.id.toUpperCase()}</TableCell>
-                      <TableCell className="font-medium">{o.clientName}</TableCell>
-                      <TableCell>{o.items.length} SKUs</TableCell>
-                      <TableCell className="text-right font-semibold">${o.total.toLocaleString()}</TableCell>
+                      <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}</TableCell>
+                      <TableCell className="font-medium">{o.clients?.name || "—"}</TableCell>
+                      <TableCell className="text-right font-semibold">${(o.total || 0).toLocaleString()}</TableCell>
                       <TableCell>
                         <Badge className={cn("text-[10px]", statusColor(o.status))}>
                           {orderStatusLabels[o.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{o.createdAt}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{o.dueDate}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{new Date(o.created_at).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Send className="h-3.5 w-3.5" />
-                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7"><Send className="h-3.5 w-3.5" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {orders.length === 0 && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Sin pedidos aún</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -99,8 +133,8 @@ export default function Orders() {
                       <TableCell className="font-mono text-xs">{c.rut}</TableCell>
                       <TableCell className="text-xs">{c.email}</TableCell>
                       <TableCell>{c.city}</TableCell>
-                      <TableCell className="text-right font-semibold">${(c.totalPurchases / 1000000).toFixed(1)}M</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{c.lastOrder}</TableCell>
+                      <TableCell className="text-right font-semibold">${((c.total_purchases || 0) / 1000000).toFixed(1)}M</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{c.last_order_date || "—"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

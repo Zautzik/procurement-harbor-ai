@@ -1,12 +1,27 @@
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { trends } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
+type Trend = {
+  id: string; name: string; category: string; score: number;
+  market: string | null; season: string | null; description: string | null;
+  sparkline_data: any;
+};
+
 export default function TrendRadar() {
-  const alignment = Math.round(trends.reduce((s, t) => s + (t.matchedSkus.length > 0 ? t.score : 0), 0) / trends.length);
+  const [trends, setTrends] = useState<Trend[]>([]);
+
+  useEffect(() => {
+    supabase.from("trends").select("*").order("score", { ascending: false }).then(({ data }) => {
+      setTrends((data as Trend[]) || []);
+    });
+  }, []);
+
+  const alignment = trends.length ? Math.round(trends.reduce((s, t) => s + t.score, 0) / trends.length) : 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -24,50 +39,45 @@ export default function TrendRadar() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {trends.map((trend) => (
-          <Card key={trend.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-heading font-semibold text-sm">{trend.name}</p>
-                  <div className="flex gap-1.5 mt-1">
-                    <Badge variant="secondary" className="text-[10px]">{trend.category}</Badge>
-                    <Badge variant="secondary" className="text-[10px]">{trend.market}</Badge>
+        {trends.map((trend) => {
+          const sparkline = Array.isArray(trend.sparkline_data) ? trend.sparkline_data : [];
+          return (
+            <Card key={trend.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-heading font-semibold text-sm">{trend.name}</p>
+                    <div className="flex gap-1.5 mt-1">
+                      <Badge variant="secondary" className="text-[10px]">{trend.category}</Badge>
+                      {trend.market && <Badge variant="secondary" className="text-[10px]">{trend.market}</Badge>}
+                    </div>
+                  </div>
+                  <div className={cn("text-2xl font-heading font-bold", trend.score >= 80 ? "text-primary" : trend.score >= 60 ? "text-chart-3" : "text-destructive")}>
+                    {trend.score}
                   </div>
                 </div>
-                <div className={cn("text-2xl font-heading font-bold", trend.score >= 80 ? "text-primary" : trend.score >= 60 ? "text-chart-3" : "text-destructive")}>
-                  {trend.score}
-                </div>
-              </div>
 
-              {/* Sparkline */}
-              <div className="h-12">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trend.sparkline.map((v, i) => ({ v, i }))}>
-                    <Line type="monotone" dataKey="v" stroke={trend.change >= 0 ? "hsl(155 100% 41%)" : "hsl(0 84% 60%)"} strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-xs">
-                  {trend.change >= 0 ? <TrendingUp className="h-3 w-3 text-primary" /> : <TrendingDown className="h-3 w-3 text-destructive" />}
-                  <span className={cn(trend.change >= 0 ? "text-primary" : "text-destructive")}>
-                    {trend.change > 0 && "+"}{trend.change} pts
-                  </span>
-                </div>
-                {trend.matchedSkus.length > 0 && (
-                  <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-                    {trend.matchedSkus.length} SKU match
-                  </Badge>
+                {sparkline.length > 0 && (
+                  <div className="h-12">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={sparkline.map((v: number, i: number) => ({ v, i }))}>
+                        <Line type="monotone" dataKey="v" stroke="hsl(155 100% 41%)" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 )}
-              </div>
 
-              <p className="text-xs text-muted-foreground leading-relaxed">{trend.description}</p>
-              <p className="text-[10px] text-muted-foreground">{trend.season}</p>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex items-center gap-1 text-xs">
+                  <TrendingUp className="h-3 w-3 text-primary" />
+                  <span className="text-primary">Tendencia activa</span>
+                </div>
+
+                {trend.description && <p className="text-xs text-muted-foreground leading-relaxed">{trend.description}</p>}
+                {trend.season && <p className="text-[10px] text-muted-foreground">{trend.season}</p>}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
