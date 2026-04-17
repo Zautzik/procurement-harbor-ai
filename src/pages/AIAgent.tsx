@@ -1,28 +1,53 @@
+import { useEffect, useState } from "react";
 import { Bot, CheckCircle2, XCircle, Eye, Zap, Target, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const pendingApprovals = [
-  { id: 1, action: "Generar Orden de Compra", detail: "Lino Azul Navy — 50 rollos a Suzhou Textiles", risk: "bajo", timestamp: "Hoy 08:45" },
-  { id: 2, action: "Enviar alerta de stock a cliente", detail: "Telas Premium Chile — Seda Crema agotándose", risk: "bajo", timestamp: "Hoy 09:10" },
-  { id: 3, action: "Aplicar descuento sugerido", detail: "Poliéster Reciclado -15% (tendencia a la baja)", risk: "medio", timestamp: "Hoy 09:30" },
-];
-
-const agentLog = [
-  { id: 1, text: "Detectó stock bajo de Lino Azul Navy → generó borrador OC → esperando aprobación", time: "08:45" },
-  { id: 2, text: "Analizó tendencias semanales → actualizó scores de 15 SKUs", time: "08:30" },
-  { id: 3, text: "Procesó packing list de PO-2026-001 → verificó 4 ítems coinciden", time: "08:15" },
-  { id: 4, text: "Envió resumen semanal de tendencias al chat", time: "Lun 10:00" },
-];
-
-const metrics = [
-  { label: "Decisiones esta semana", value: "23", icon: Zap },
-  { label: "Precisión estimada", value: "94%", icon: Target },
-  { label: "Ahorro estimado", value: "$2.1M CLP", icon: Shield },
-];
+type Action = {
+  id: string; action_type: string; description: string;
+  status: "pending" | "approved" | "rejected"; created_at: string;
+  details: any;
+};
 
 export default function AIAgent() {
+  const [actions, setActions] = useState<Action[]>([]);
+
+  const load = async () => {
+    const { data } = await supabase.from("ai_agent_actions").select("*").order("created_at", { ascending: false });
+    setActions((data as Action[]) || []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handle = async (id: string, status: "approved" | "rejected") => {
+    const user = (await supabase.auth.getUser()).data.user;
+    const { error } = await supabase.from("ai_agent_actions").update({
+      status, resolved_at: new Date().toISOString(), resolved_by: user?.id,
+    }).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(status === "approved" ? "Acción aprobada" : "Acción rechazada");
+      await supabase.from("audit_log").insert({
+        action: `ai_action_${status}`, entity_type: "ai_agent_action", entity_id: id,
+        user_id: user?.id, performed_by: "human",
+      });
+      load();
+    }
+  };
+
+  const pending = actions.filter((a) => a.status === "pending");
+  const resolved = actions.filter((a) => a.status !== "pending");
+
+  const metrics = [
+    { label: "Decisiones esta semana", value: String(actions.length), icon: Zap },
+    { label: "Tasa de aprobación", value: actions.length ? `${Math.round((actions.filter(a => a.status === "approved").length / actions.length) * 100)}%` : "—", icon: Target },
+    { label: "Pendientes", value: String(pending.length), icon: Shield },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -30,7 +55,6 @@ export default function AIAgent() {
         <p className="text-sm text-muted-foreground">Transparencia y control sobre las acciones de ThreadOps</p>
       </div>
 
-      {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {metrics.map((m) => (
           <Card key={m.label}>
@@ -47,48 +71,48 @@ export default function AIAgent() {
         ))}
       </div>
 
-      {/* Pending Approvals */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-heading flex items-center gap-2">
             <Bot className="h-4 w-4 text-primary" />
-            Aprobaciones Pendientes
+            Aprobaciones Pendientes ({pending.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {pendingApprovals.map((item) => (
+          {pending.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sin acciones pendientes</p>}
+          {pending.map((item) => (
             <div key={item.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">{item.action}</p>
-                <p className="text-xs text-muted-foreground">{item.detail}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary" className="text-[10px]">Riesgo {item.risk}</Badge>
-                  <span className="text-[10px] text-muted-foreground">{item.timestamp}</span>
-                </div>
+                <p className="font-medium text-sm">{item.action_type}</p>
+                <p className="text-xs text-muted-foreground">{item.description}</p>
+                <span className="text-[10px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</span>
               </div>
               <div className="flex gap-2 shrink-0">
                 <Button size="sm" variant="outline" className="h-7 text-xs"><Eye className="h-3 w-3 mr-1" />Ver</Button>
-                <Button size="sm" className="h-7 text-xs"><CheckCircle2 className="h-3 w-3 mr-1" />Aprobar</Button>
-                <Button size="sm" variant="destructive" className="h-7 text-xs"><XCircle className="h-3 w-3 mr-1" />Rechazar</Button>
+                <Button size="sm" className="h-7 text-xs" onClick={() => handle(item.id, "approved")}><CheckCircle2 className="h-3 w-3 mr-1" />Aprobar</Button>
+                <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handle(item.id, "rejected")}><XCircle className="h-3 w-3 mr-1" />Rechazar</Button>
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      {/* Activity Log */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-heading">Registro de Actividad IA</CardTitle>
+          <CardTitle className="text-base font-heading">Historial</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {agentLog.map((entry) => (
+          {resolved.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sin historial</p>}
+          {resolved.map((entry) => (
             <div key={entry.id} className="flex items-start gap-3 text-sm">
               <Bot className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <div>
-                <p>{entry.text}</p>
-                <p className="text-xs text-muted-foreground">{entry.time}</p>
+              <div className="flex-1">
+                <p>{entry.description}</p>
+                <p className="text-xs text-muted-foreground">{new Date(entry.created_at).toLocaleString()}</p>
               </div>
+              <Badge variant={entry.status === "approved" ? "default" : "destructive"} className="text-[10px]">
+                {entry.status === "approved" ? "Aprobada" : "Rechazada"}
+              </Badge>
             </div>
           ))}
         </CardContent>
