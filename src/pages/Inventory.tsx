@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
-import { Search, Grid3X3, Table as TableIcon, Download, Upload, Plus, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Search, Grid3X3, Table as TableIcon, Download, Upload, Plus, Check, X, QrCode, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { exportToCsv } from "@/lib/exportCsv";
 import { cn } from "@/lib/utils";
+import { SkuForm } from "@/components/forms/SkuForm";
+import { downloadSkuQr, downloadSkuSheetPdf } from "@/lib/qrBarcode";
+import { parseSkuFile, downloadSkuTemplate } from "@/lib/excelImport";
 
 type SKU = {
   id: string;
@@ -44,6 +48,35 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<{ id: string; field: keyof SKU } | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const rows = await parseSkuFile(file);
+      if (!rows.length) return toast.error("Archivo vacío");
+      const cleaned = rows.map((r: any) => ({
+        sku_code: String(r.sku_code || r.SKU || ""),
+        name: String(r.name || r.Nombre || ""),
+        fabric: String(r.fabric || r.Tela || ""),
+        color: String(r.color || r.Color || ""),
+        size: String(r.size || r.Talla || ""),
+        stock: Number(r.stock || r.Stock || 0),
+        location: String(r.location || r.Ubicacion || ""),
+        cost_usd: Number(r.cost_usd || 0),
+        price_clp: Number(r.price_clp || r.Precio_CLP || 0),
+        trend_score: Number(r.trend_score || r.TrendScore || 50),
+      })).filter((r) => r.sku_code && r.name);
+      const { error } = await supabase.from("skus").upsert(cleaned, { onConflict: "sku_code" });
+      if (error) return toast.error(error.message);
+      toast.success(`${cleaned.length} SKUs importados`);
+      load();
+    } catch (err: any) {
+      toast.error("Error al importar: " + err.message);
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   const load = async () => {
     setLoading(true);
