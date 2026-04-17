@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Ship, Download } from "lucide-react";
+import { Ship, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToCsv } from "@/lib/exportCsv";
 import { cn } from "@/lib/utils";
+import { ShipmentForm } from "@/components/forms/ShipmentForm";
 
 type ShipmentStatus = "ordered" | "production" | "shipped" | "customs" | "warehouse";
 
@@ -30,11 +31,13 @@ const columns: { key: ShipmentStatus; label: string; emoji: string; color: strin
 export default function Shipments() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
 
-  useEffect(() => {
+  const load = () => {
     supabase.from("shipments").select("*").order("created_at", { ascending: false }).then(({ data }) => {
       setShipments((data as Shipment[]) || []);
     });
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
 
   const handleExport = () => {
     exportToCsv("embarques", shipments.map((s) => ({
@@ -50,7 +53,10 @@ export default function Shipments() {
           <h1 className="font-heading text-2xl font-bold">Embarques</h1>
           <p className="text-sm text-muted-foreground">{shipments.length} embarques activos</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1" />Exportar CSV</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1" />Exportar CSV</Button>
+          <ShipmentForm trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" />Nuevo Embarque</Button>} onCreated={load} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">

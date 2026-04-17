@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
-import { Search, Grid3X3, Table as TableIcon, Download, Upload, Plus, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Search, Grid3X3, Table as TableIcon, Download, Upload, Plus, Check, X, QrCode, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { exportToCsv } from "@/lib/exportCsv";
 import { cn } from "@/lib/utils";
+import { SkuForm } from "@/components/forms/SkuForm";
+import { downloadSkuQr, downloadSkuSheetPdf } from "@/lib/qrBarcode";
+import { parseSkuFile, downloadSkuTemplate } from "@/lib/excelImport";
 
 type SKU = {
   id: string;
@@ -44,6 +48,35 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<{ id: string; field: keyof SKU } | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const rows = await parseSkuFile(file);
+      if (!rows.length) return toast.error("Archivo vacío");
+      const cleaned = rows.map((r: any) => ({
+        sku_code: String(r.sku_code || r.SKU || ""),
+        name: String(r.name || r.Nombre || ""),
+        fabric: String(r.fabric || r.Tela || ""),
+        color: String(r.color || r.Color || ""),
+        size: String(r.size || r.Talla || ""),
+        stock: Number(r.stock || r.Stock || 0),
+        location: String(r.location || r.Ubicacion || ""),
+        cost_usd: Number(r.cost_usd || 0),
+        price_clp: Number(r.price_clp || r.Precio_CLP || 0),
+        trend_score: Number(r.trend_score || r.TrendScore || 50),
+      })).filter((r) => r.sku_code && r.name);
+      const { error } = await supabase.from("skus").upsert(cleaned, { onConflict: "sku_code" });
+      if (error) return toast.error(error.message);
+      toast.success(`${cleaned.length} SKUs importados`);
+      load();
+    } catch (err: any) {
+      toast.error("Error al importar: " + err.message);
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   const load = async () => {
     setLoading(true);
@@ -138,9 +171,19 @@ export default function Inventory() {
           <p className="text-sm text-muted-foreground">{skus.length} SKUs · {skus.reduce((s, i) => s + i.stock, 0)} rollos totales</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Upload className="h-4 w-4 mr-1" />Importar</Button>
+          <input ref={fileRef} type="file" accept=".xlsx,.csv" hidden onChange={handleImport} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm"><Upload className="h-4 w-4 mr-1" />Importar</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => fileRef.current?.click()}>Subir Excel/CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadSkuTemplate}>Descargar plantilla</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1" />Exportar CSV</Button>
-          <Button size="sm"><Plus className="h-4 w-4 mr-1" />Nuevo SKU</Button>
+          <Button variant="outline" size="sm" onClick={() => downloadSkuSheetPdf(filtered)}><FileDown className="h-4 w-4 mr-1" />QR PDF</Button>
+          <SkuForm trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" />Nuevo SKU</Button>} onCreated={load} />
         </div>
       </div>
 
@@ -182,6 +225,7 @@ export default function Inventory() {
                   <TableHead>Ubicación</TableHead>
                   <TableHead className="text-right">Trend</TableHead>
                   <TableHead className="text-right">Precio</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -202,6 +246,11 @@ export default function Inventory() {
                       {renderCell(item, "trend_score", item.trend_score)}
                     </TableCell>
                     <TableCell className="text-right">{renderCell(item, "price_clp", `$${(item.price_clp || 0).toLocaleString()}`)}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadSkuQr(item)} title="Descargar QR">
+                        <QrCode className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
