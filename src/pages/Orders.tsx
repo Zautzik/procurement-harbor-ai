@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Send, Download } from "lucide-react";
+import { Plus, Send, Download, FileDown, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToCsv } from "@/lib/exportCsv";
 import { cn } from "@/lib/utils";
+import { OrderForm } from "@/components/forms/OrderForm";
+import { ClientForm } from "@/components/forms/ClientForm";
+import { downloadInvoice, whatsappShareUrl } from "@/lib/invoicePdf";
+import { toast } from "sonner";
 
 type OrderStatus = "borrador" | "confirmado" | "preparando" | "despachado" | "pagado";
 

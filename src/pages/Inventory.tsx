@@ -225,6 +225,7 @@ export default function Inventory() {
                   <TableHead>Ubicación</TableHead>
                   <TableHead className="text-right">Trend</TableHead>
                   <TableHead className="text-right">Precio</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -245,6 +246,11 @@ export default function Inventory() {
                       {renderCell(item, "trend_score", item.trend_score)}
                     </TableCell>
                     <TableCell className="text-right">{renderCell(item, "price_clp", `$${(item.price_clp || 0).toLocaleString()}`)}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadSkuQr(item)} title="Descargar QR">
+                        <QrCode className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
