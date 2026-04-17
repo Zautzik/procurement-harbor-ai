@@ -1,0 +1,12 @@
+{
+  "name": "Procurement & Harbor",
+  "short_name": "P&H",
+  "description": "AI-powered command center for textile importers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F1117",
+  "theme_color": "#00D084",
+  "icons": [
+    { "src": "/placeholder.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}
