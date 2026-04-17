@@ -76,7 +76,7 @@ export default function Inventory() {
     const { id, field } = editing;
     const numeric = ["stock", "trend_score", "price_clp"].includes(field as string);
     const value: any = numeric ? Number(editValue) : editValue;
-    const { error } = await supabase.from("skus").update({ [field]: value }).eq("id", id);
+    const { error } = await supabase.from("skus").update({ [field]: value } as any).eq("id", id);
     if (error) {
       toast.error("Error al guardar: " + error.message);
     } else {
