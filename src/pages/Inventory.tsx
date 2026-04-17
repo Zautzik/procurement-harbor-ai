@@ -171,9 +171,19 @@ export default function Inventory() {
           <p className="text-sm text-muted-foreground">{skus.length} SKUs · {skus.reduce((s, i) => s + i.stock, 0)} rollos totales</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Upload className="h-4 w-4 mr-1" />Importar</Button>
+          <input ref={fileRef} type="file" accept=".xlsx,.csv" hidden onChange={handleImport} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm"><Upload className="h-4 w-4 mr-1" />Importar</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => fileRef.current?.click()}>Subir Excel/CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadSkuTemplate}>Descargar plantilla</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1" />Exportar CSV</Button>
-          <Button size="sm"><Plus className="h-4 w-4 mr-1" />Nuevo SKU</Button>
+          <Button variant="outline" size="sm" onClick={() => downloadSkuSheetPdf(filtered)}><FileDown className="h-4 w-4 mr-1" />QR PDF</Button>
+          <SkuForm trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" />Nuevo SKU</Button>} onCreated={load} />
         </div>
       </div>
 
