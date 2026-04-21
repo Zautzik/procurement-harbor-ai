@@ -47,6 +47,48 @@ export type Database = {
         }
         Relationships: []
       }
+      alerts: {
+        Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          message: string | null
+          severity: string
+          title: string
+          type: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message?: string | null
+          severity?: string
+          title: string
+          type: string
+        }
+        Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message?: string | null
+          severity?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -195,6 +237,9 @@ export type Database = {
           created_by: string | null
           id: string
           notes: string | null
+          paid_amount: number | null
+          paid_at: string | null
+          payment_method: string | null
           status: Database["public"]["Enums"]["order_status"]
           total: number | null
           updated_at: string
@@ -205,6 +250,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total?: number | null
           updated_at?: string
@@ -215,6 +263,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total?: number | null
           updated_at?: string
@@ -256,6 +307,36 @@ export type Database = {
           language?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      shipment_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          file_name: string
+          file_path: string
+          id: string
+          shipment_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          file_name: string
+          file_path: string
+          id?: string
+          shipment_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          shipment_id?: string
+          uploaded_by?: string | null
         }
         Relationships: []
       }
@@ -394,6 +475,33 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_subscribers: {
+        Row: {
+          active: boolean
+          chat_id: number
+          created_at: string
+          id: string
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          active?: boolean
+          chat_id: number
+          created_at?: string
+          id?: string
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          active?: boolean
+          chat_id?: number
+          created_at?: string
+          id?: string
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       trends: {
         Row: {
           category: string
@@ -454,6 +562,33 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_digests: {
+        Row: {
+          at_risk_skus: Json | null
+          created_at: string
+          id: string
+          summary: string | null
+          top_trends: Json | null
+          week_start: string
+        }
+        Insert: {
+          at_risk_skus?: Json | null
+          created_at?: string
+          id?: string
+          summary?: string | null
+          top_trends?: Json | null
+          week_start: string
+        }
+        Update: {
+          at_risk_skus?: Json | null
+          created_at?: string
+          id?: string
+          summary?: string | null
+          top_trends?: Json | null
+          week_start?: string
         }
         Relationships: []
       }
