@@ -8,31 +8,34 @@ const corsHeaders = {
 
 const SYSTEM_PROMPT = `Eres ThreadOps AI, asistente de Procurement & Harbor (importadores textiles China→Chile/LatAm).
 
-Personalidad: Profesional, conciso, español preferido. Conoces telas (lino, algodón, poliéster, seda), logística internacional.
+Profesional, conciso, español. Conoces telas (lino, algodón, poliéster, seda) y logística.
 
-Tienes herramientas (tools) para consultar la base de datos en tiempo real. ÚSALAS siempre que el usuario pregunte por datos:
+TIENES TOOLS — úsalas siempre que se pregunte por datos reales:
 - query_inventory: stock, SKUs, precios
-- query_shipments: estado de embarques
-- query_trends: tendencias del mercado
-- create_purchase_order_draft: crea un borrador en ai_agent_actions que el manager debe aprobar (NO ejecuta directamente)
+- query_shipments: estado embarques
+- query_trends: tendencias
+- create_purchase_order_draft: crea borrador en ai_agent_actions (REQUIERE aprobación humana)
 
-Reglas críticas:
-- NUNCA inventes datos. Si no tienes info, usa una tool.
-- Para crear cualquier acción (OC, ajuste de stock), usa create_purchase_order_draft → requiere aprobación humana.
-- Formato: **negrita** para datos clave, listas para estructura, emojis con moderación.`;
+Si el usuario sube una foto de tela: identifica fibra, color, textura y SUGIERE SKUs similares (usa query_inventory con search).
+
+Cuando devuelvas datos, incluye markers JSON al final para tarjetas inline:
+- SKUs: \`\`\`card:sku\\n{"sku_code":"...","name":"...","stock":N,"price_clp":N,"location":"..."}\\n\`\`\`
+- Embarque: \`\`\`card:shipment\\n{"po_number":"...","supplier":"...","status":"...","eta":"..."}\\n\`\`\`
+
+NUNCA inventes. Para crear OC usa create_purchase_order_draft.`;
 
 const tools = [
   {
     type: "function",
     function: {
       name: "query_inventory",
-      description: "Consulta SKUs en inventario. Filtra por nombre, color, tela o devuelve stock bajo.",
+      description: "Consulta SKUs en inventario.",
       parameters: {
         type: "object",
         properties: {
-          search: { type: "string", description: "Texto a buscar en nombre/código/color/tela" },
-          low_stock_only: { type: "boolean", description: "Solo SKUs con stock < 15" },
-          limit: { type: "number", description: "Máximo de resultados (default 10)" },
+          search: { type: "string" },
+          low_stock_only: { type: "boolean" },
+          limit: { type: "number" },
         },
       },
     },
@@ -41,12 +44,10 @@ const tools = [
     type: "function",
     function: {
       name: "query_shipments",
-      description: "Consulta embarques activos por estado.",
+      description: "Consulta embarques por estado.",
       parameters: {
         type: "object",
-        properties: {
-          status: { type: "string", enum: ["ordered", "production", "shipped", "customs", "warehouse"] },
-        },
+        properties: { status: { type: "string", enum: ["ordered", "production", "shipped", "customs", "warehouse"] } },
       },
     },
   },
@@ -54,7 +55,7 @@ const tools = [
     type: "function",
     function: {
       name: "query_trends",
-      description: "Devuelve las tendencias actuales del mercado textil ordenadas por score.",
+      description: "Tendencias del mercado textil.",
       parameters: { type: "object", properties: { limit: { type: "number" } } },
     },
   },
@@ -62,14 +63,14 @@ const tools = [
     type: "function",
     function: {
       name: "create_purchase_order_draft",
-      description: "Crea un BORRADOR de orden de compra que el manager debe aprobar manualmente. NO ejecuta nada.",
+      description: "Borrador de OC para aprobación humana.",
       parameters: {
         type: "object",
         properties: {
           supplier: { type: "string" },
           items_description: { type: "string" },
           estimated_value_usd: { type: "number" },
-          reason: { type: "string", description: "Por qué sugerir esta OC" },
+          reason: { type: "string" },
         },
         required: ["supplier", "items_description", "reason"],
       },
@@ -103,7 +104,7 @@ async function executeTool(name: string, args: any, supabase: any) {
       details: args,
       status: "pending",
     }).select().single();
-    return error ? { error: error.message } : { created: true, action_id: data.id, message: "Borrador creado. El manager debe aprobarlo en /ai-agent." };
+    return error ? { error: error.message } : { created: true, action_id: data.id, message: "Borrador creado. Apruébalo en /ai-agent." };
   }
   return { error: "Tool desconocida" };
 }
@@ -112,7 +113,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    const { messages, image_url } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY no configurada");
 
@@ -121,13 +122,24 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    let conversationMessages = [
+    // If an image is included, prepend it to the last user message as multimodal content
+    const conv = [...messages];
+    if (image_url && conv.length > 0) {
+      const last = conv[conv.length - 1];
+      if (last.role === "user") {
+        last.content = [
+          { type: "text", text: typeof last.content === "string" ? last.content : "Analiza esta foto de tela." },
+          { type: "image_url", image_url: { url: image_url } },
+        ];
+      }
+    }
+
+    let conversationMessages: any[] = [
       { role: "system", content: SYSTEM_PROMPT },
-      ...messages,
+      ...conv,
     ];
 
-    // Tool loop (max 3 iterations to prevent runaways)
-    for (let iter = 0; iter < 3; iter++) {
+    for (let iter = 0; iter < 4; iter++) {
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
@@ -153,26 +165,18 @@ serve(async (req) => {
 
       const toolCalls = msg.tool_calls;
       if (!toolCalls || toolCalls.length === 0) {
-        // Final answer — stream it back
-        return new Response(
-          JSON.stringify({ content: msg.content || "" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ content: msg.content || "" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       conversationMessages.push(msg);
       for (const call of toolCalls) {
         const args = JSON.parse(call.function.arguments || "{}");
         const result = await executeTool(call.function.name, args, supabase);
-        conversationMessages.push({
-          role: "tool",
-          tool_call_id: call.id,
-          content: JSON.stringify(result),
-        });
+        conversationMessages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
       }
     }
 
-    return new Response(JSON.stringify({ content: "Demasiadas iteraciones de herramientas." }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ content: "Demasiadas iteraciones." }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("chat error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
