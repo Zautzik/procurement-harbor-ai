@@ -112,14 +112,14 @@ export function AppSidebar() {
           ))}
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip="Cerrar Sesión"
+              tooltip={t("logout")}
               onClick={async () => {
                 const { supabase } = await import("@/integrations/supabase/client");
                 await supabase.auth.signOut();
               }}
             >
               <LogOut className="h-4 w-4" />
-              {!collapsed && <span>Cerrar Sesión</span>}
+              {!collapsed && <span>{t("logout")}</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
