@@ -41,7 +41,8 @@ export default function SettingsPage() {
   const saveProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({ display_name: displayName, language: i18n.language.startsWith("en") ? "en" : "es" }).eq("user_id", user.id);
+    const lang = i18n.language.startsWith("zh") ? "zh" : i18n.language.startsWith("en") ? "en" : "es";
+    const { error } = await supabase.from("profiles").update({ display_name: displayName, language: lang }).eq("user_id", user.id);
     if (error) return toast.error(error.message);
     toast.success("Perfil guardado");
   };
@@ -73,11 +74,12 @@ export default function SettingsPage() {
       </div>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base font-heading flex items-center gap-2"><Globe className="h-4 w-4" /> Idioma</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-base font-heading flex items-center gap-2"><Globe className="h-4 w-4" /> {t("language")}</CardTitle></CardHeader>
         <CardContent className="flex items-center gap-3">
-          <p className="text-sm flex-1">Cambia entre Español e Inglés</p>
+          <p className="text-sm flex-1">Español · English · 中文</p>
           <Button size="sm" variant={i18n.language.startsWith("es") ? "default" : "outline"} onClick={() => i18n.changeLanguage("es")}>ES</Button>
           <Button size="sm" variant={i18n.language.startsWith("en") ? "default" : "outline"} onClick={() => i18n.changeLanguage("en")}>EN</Button>
+          <Button size="sm" variant={i18n.language.startsWith("zh") ? "default" : "outline"} onClick={() => i18n.changeLanguage("zh")}>中文</Button>
         </CardContent>
       </Card>
 

@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const CHART_COLORS = ["hsl(155 100% 41%)", "hsl(200 80% 50%)", "hsl(47 100% 50%)", "hsl(280 60% 55%)", "hsl(0 84% 60%)"];
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [skus, setSkus] = useState<any[]>([]);
   const [shipments, setShipments] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -54,11 +56,11 @@ export default function Dashboard() {
   const lowStock = skus.filter((s) => (s.stock || 0) < 15).length;
 
   const kpis = [
-    { label: "Valor Stock", value: `$${(stockValue / 1000000).toFixed(1)}M`, sub: "CLP", icon: Package, color: "text-primary" },
-    { label: "En Tránsito", value: inTransit.length, sub: `$${(inTransitValue / 1000000).toFixed(1)}M`, icon: Ship, color: "text-chart-2" },
-    { label: "Pedidos", value: orders.length, sub: `$${(ordersTotal / 1000).toFixed(0)}K`, icon: FileText, color: "text-chart-3" },
-    { label: "Tendencias", value: `${trendAlignment}%`, sub: "Score", icon: TrendingUp, color: "text-primary" },
-    { label: "Stock Bajo", value: lowStock, sub: "SKUs", icon: AlertTriangle, color: "text-destructive" },
+    { label: t("stockValue"), value: `$${(stockValue / 1000000).toFixed(1)}M`, sub: "CLP", icon: Package, color: "text-primary" },
+    { label: t("inTransit"), value: inTransit.length, sub: `$${(inTransitValue / 1000000).toFixed(1)}M`, icon: Ship, color: "text-chart-2" },
+    { label: t("orders"), value: orders.length, sub: `$${(ordersTotal / 1000).toFixed(0)}K`, icon: FileText, color: "text-chart-3" },
+    { label: t("trends"), value: `${trendAlignment}%`, sub: "Score", icon: TrendingUp, color: "text-primary" },
+    { label: t("lowStock"), value: lowStock, sub: "SKUs", icon: AlertTriangle, color: "text-destructive" },
   ];
 
   const fabricMap: Record<string, number> = {};
@@ -76,8 +78,8 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold">Centro de Comando</h1>
-        <p className="text-sm text-muted-foreground">Vista ejecutiva en tiempo real</p>
+        <h1 className="font-heading text-2xl font-bold">{t("commandCenter")}</h1>
+        <p className="text-sm text-muted-foreground">{t("realtimeView")}</p>
       </div>
 
       {alerts.length > 0 && (

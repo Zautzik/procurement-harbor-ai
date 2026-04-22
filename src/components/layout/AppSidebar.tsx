@@ -24,22 +24,20 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-
-const modules = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Chat IA", url: "/chat", icon: MessageSquare },
-  { title: "Inventario", url: "/inventory", icon: Package },
-  { title: "Embarques", url: "/shipments", icon: Ship },
-  { title: "Trend Radar", url: "/trends", icon: TrendingUp },
-  { title: "Pedidos", url: "/orders", icon: FileText },
-  { title: "Agente IA", url: "/ai-agent", icon: Bot },
-];
-
-const bottomItems = [
-  { title: "Configuración", url: "/settings", icon: Settings },
-];
+import { useTranslation } from "react-i18next";
 
 export function AppSidebar() {
+  const { t } = useTranslation();
+  const modules = [
+    { title: t("dashboard"), url: "/", icon: LayoutDashboard },
+    { title: t("chat"), url: "/chat", icon: MessageSquare },
+    { title: t("inventory"), url: "/inventory", icon: Package },
+    { title: t("shipments"), url: "/shipments", icon: Ship },
+    { title: t("trends"), url: "/trends", icon: TrendingUp },
+    { title: t("orders"), url: "/orders", icon: FileText },
+    { title: t("aiAgent"), url: "/ai-agent", icon: Bot },
+  ];
+  const bottomItems = [{ title: t("settings"), url: "/settings", icon: Settings }];
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
@@ -114,14 +112,14 @@ export function AppSidebar() {
           ))}
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip="Cerrar Sesión"
+              tooltip={t("logout")}
               onClick={async () => {
                 const { supabase } = await import("@/integrations/supabase/client");
                 await supabase.auth.signOut();
               }}
             >
               <LogOut className="h-4 w-4" />
-              {!collapsed && <span>Cerrar Sesión</span>}
+              {!collapsed && <span>{t("logout")}</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
