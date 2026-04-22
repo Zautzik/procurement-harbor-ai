@@ -1,0 +1,2 @@
+CREATE POLICY "No client access" ON public.rate_limits FOR SELECT TO authenticated USING (false);
+CREATE POLICY "No client write" ON public.rate_limits FOR ALL TO authenticated USING (false) WITH CHECK (false);
