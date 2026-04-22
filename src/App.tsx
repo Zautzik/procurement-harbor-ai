@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Chat from "@/pages/Chat";
 import Inventory from "@/pages/Inventory";
+import Warehouses from "@/pages/Warehouses";
 import Shipments from "@/pages/Shipments";
 import TrendRadar from "@/pages/TrendRadar";
 import Orders from "@/pages/Orders";
@@ -37,6 +38,7 @@ function ProtectedRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/inventory" element={<Inventory />} />
+        <Route path="/warehouses" element={<Warehouses />} />
         <Route path="/shipments" element={<Shipments />} />
         <Route path="/trends" element={<TrendRadar />} />
         <Route path="/orders" element={<Orders />} />
