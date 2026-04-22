@@ -109,6 +109,27 @@ async function executeTool(name: string, args: any, supabase: any) {
   return { error: "Tool desconocida" };
 }
 
+const RATE_LIMIT_PER_MIN = 20;
+
+async function checkRateLimit(supabase: any, userId: string): Promise<boolean> {
+  const windowStart = new Date(Math.floor(Date.now() / 60000) * 60000).toISOString();
+  const { data: existing } = await supabase
+    .from("rate_limits")
+    .select("count")
+    .eq("user_id", userId)
+    .eq("action", "chat")
+    .eq("window_start", windowStart)
+    .maybeSingle();
+  if (existing && existing.count >= RATE_LIMIT_PER_MIN) return false;
+  if (existing) {
+    await supabase.from("rate_limits").update({ count: existing.count + 1 })
+      .eq("user_id", userId).eq("action", "chat").eq("window_start", windowStart);
+  } else {
+    await supabase.from("rate_limits").insert({ user_id: userId, action: "chat", window_start: windowStart, count: 1 });
+  }
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -121,6 +142,19 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Rate limit per authenticated user
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        const ok = await checkRateLimit(supabase, user.id);
+        if (!ok) {
+          return new Response(JSON.stringify({ error: "Has alcanzado el límite de 20 mensajes por minuto. Espera un momento." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+    }
 
     // If an image is included, prepend it to the last user message as multimodal content
     const conv = [...messages];

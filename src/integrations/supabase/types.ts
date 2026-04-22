@@ -188,6 +188,36 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_rates: {
+        Row: {
+          base_currency: string
+          created_at: string
+          id: string
+          quote_currency: string
+          rate: number
+          rate_date: string
+          source: string | null
+        }
+        Insert: {
+          base_currency: string
+          created_at?: string
+          id?: string
+          quote_currency: string
+          rate: number
+          rate_date?: string
+          source?: string | null
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          id?: string
+          quote_currency?: string
+          rate?: number
+          rate_date?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -280,6 +310,53 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          method: string
+          notes: string | null
+          order_id: string
+          paid_at: string
+          recorded_by: string | null
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          method: string
+          notes?: string | null
+          order_id: string
+          paid_at?: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          order_id?: string
+          paid_at?: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -307,6 +384,30 @@ export type Database = {
           language?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          action: string
+          count: number
+          id: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          action: string
+          count?: number
+          id?: string
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          action?: string
+          count?: number
+          id?: string
+          user_id?: string
+          window_start?: string
         }
         Relationships: []
       }
@@ -475,6 +576,176 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_by_warehouse: {
+        Row: {
+          id: string
+          quantity: number
+          reorder_point: number | null
+          reserved: number
+          sku_id: string
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          id?: string
+          quantity?: number
+          reorder_point?: number | null
+          reserved?: number
+          sku_id: string
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          id?: string
+          quantity?: number
+          reorder_point?: number | null
+          reserved?: number
+          sku_id?: string
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_by_warehouse_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "skus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_by_warehouse_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          movement_type: string
+          notes: string | null
+          performed_by: string | null
+          quantity: number
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          sku_id: string
+          to_warehouse_id: string | null
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          movement_type: string
+          notes?: string | null
+          performed_by?: string | null
+          quantity: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          sku_id: string
+          to_warehouse_id?: string | null
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          performed_by?: string | null
+          quantity?: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          sku_id?: string
+          to_warehouse_id?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "skus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_to_warehouse_id_fkey"
+            columns: ["to_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_reservations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          order_id: string | null
+          quantity: number
+          sku_id: string
+          status: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          quantity: number
+          sku_id: string
+          status?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          quantity?: number
+          sku_id?: string
+          status?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "skus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_subscribers: {
         Row: {
           active: boolean
@@ -565,6 +836,42 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouses: {
+        Row: {
+          active: boolean
+          address: string | null
+          city: string | null
+          code: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       weekly_digests: {
         Row: {
           at_risk_skus: Json | null
@@ -597,6 +904,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_available_stock: {
+        Args: { _sku_id: string; _warehouse_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
