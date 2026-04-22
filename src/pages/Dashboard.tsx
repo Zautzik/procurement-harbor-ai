@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const CHART_COLORS = ["hsl(155 100% 41%)", "hsl(200 80% 50%)", "hsl(47 100% 50%)", "hsl(280 60% 55%)", "hsl(0 84% 60%)"];
 
