@@ -96,7 +96,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {isAdmin && (
+      <MfaSettings />
         <>
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base font-heading flex items-center gap-2"><Users className="h-4 w-4" /> Gestión de Usuarios</CardTitle></CardHeader>
