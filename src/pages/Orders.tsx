@@ -72,22 +72,33 @@ export default function Orders() {
     window.open(whatsappShareUrl(phone, o.id, o.total || 0), "_blank");
   };
 
+  const openPayment = async (o: Order) => {
+    setPayOrder(o); setPayAmount(""); setPayReference("");
+    const { data } = await supabase.from("payments").select("*").eq("order_id", o.id).order("paid_at", { ascending: false });
+    setPayHistory(data || []);
+  };
+
   const registerPayment = async () => {
     if (!payOrder) return;
     const amount = parseFloat(payAmount);
     if (!amount || amount <= 0) return toast.error("Monto inválido");
-    const newPaid = (payOrder.paid_amount || 0) + amount;
-    const fullyPaid = newPaid >= (payOrder.total || 0);
-    const { error } = await supabase.from("orders").update({
-      paid_amount: newPaid, payment_method: payMethod,
-      paid_at: fullyPaid ? new Date().toISOString() : null,
-      status: fullyPaid ? "pagado" : payOrder.status,
-    }).eq("id", payOrder.id);
-    if (error) return toast.error(error.message);
+    const balance = (payOrder.total || 0) - (payOrder.paid_amount || 0);
+    if (amount > balance + 0.01) return toast.error(`Excede saldo ($${balance.toLocaleString()})`);
+
     const user = (await supabase.auth.getUser()).data.user;
-    await supabase.from("audit_log").insert({ action: "payment_registered", entity_type: "order", entity_id: payOrder.id, user_id: user?.id, performed_by: "human", details: { amount, method: payMethod } });
-    toast.success(fullyPaid ? "Pedido pagado completo ✅" : `Abono de $${amount.toLocaleString()} registrado`);
-    setPayOrder(null); setPayAmount("");
+    const { error } = await supabase.from("payments").insert({
+      order_id: payOrder.id, amount, method: payMethod,
+      reference: payReference || null, recorded_by: user?.id, currency: "CLP",
+    });
+    if (error) return toast.error(error.message);
+
+    const fullyPaid = amount >= balance - 0.01;
+    if (fullyPaid) {
+      await supabase.from("orders").update({ status: "pagado" }).eq("id", payOrder.id);
+    }
+    await supabase.from("audit_log").insert({ action: "payment_registered", entity_type: "order", entity_id: payOrder.id, user_id: user?.id, performed_by: "human", details: { amount, method: payMethod, reference: payReference } });
+    toast.success(fullyPaid ? "Pedido saldado completo" : `Abono de $${amount.toLocaleString()} registrado`);
+    setPayOrder(null); setPayAmount(""); setPayReference("");
     load();
   };
 
