@@ -197,23 +197,76 @@ export default function Orders() {
       </Tabs>
 
       <Dialog open={!!payOrder} onOpenChange={(o) => !o && setPayOrder(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Registrar Pago</DialogTitle></DialogHeader>
-          {payOrder && (
-            <div className="space-y-3">
-              <div className="text-sm">Pedido <b>{payOrder.id.slice(0, 8)}</b> · Total: ${(payOrder.total || 0).toLocaleString()} · Saldo: ${((payOrder.total || 0) - (payOrder.paid_amount || 0)).toLocaleString()}</div>
-              <div><Label>Monto del pago</Label><Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="0" /></div>
-              <div><Label>Método</Label>
-                <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="w-full border rounded px-3 py-2 text-sm bg-background">
-                  <option value="transferencia">Transferencia</option><option value="efectivo">Efectivo</option>
-                  <option value="tarjeta">Tarjeta</option><option value="cheque">Cheque</option>
-                </select>
+          {payOrder && (() => {
+            const total = payOrder.total || 0;
+            const paid = payOrder.paid_amount || 0;
+            const balance = total - paid;
+            const pct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Pedido <span className="font-mono">{payOrder.id.slice(0, 8)}</span></span>
+                    <span>{pct}% pagado</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span>Pagado: <b className="text-primary">${paid.toLocaleString()}</b></span>
+                    <span>Saldo: <b className={balance > 0 ? "text-destructive" : "text-primary"}>${balance.toLocaleString()}</b></span>
+                    <span>Total: <b>${total.toLocaleString()}</b></span>
+                  </div>
+                </div>
+
+                {balance > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2"><Label>Monto del pago</Label>
+                      <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="0" />
+                      <div className="flex gap-1 mt-1">
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => setPayAmount(String(Math.round(balance / 2)))}>50%</Button>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => setPayAmount(String(balance))}>Saldo total</Button>
+                      </div>
+                    </div>
+                    <div><Label>Método</Label>
+                      <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="w-full border rounded px-3 py-2 text-sm bg-background">
+                        <option value="transferencia">Transferencia</option><option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option><option value="cheque">Cheque</option>
+                      </select>
+                    </div>
+                    <div><Label>Referencia</Label>
+                      <Input value={payReference} onChange={(e) => setPayReference(e.target.value)} placeholder="N° comprobante" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-primary">Pedido saldado completo.</div>
+                )}
+
+                {payHistory.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground">Historial ({payHistory.length})</div>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {payHistory.map((p) => (
+                        <div key={p.id} className="flex items-center justify-between text-xs border rounded px-2 py-1">
+                          <span className="text-muted-foreground">{new Date(p.paid_at).toLocaleDateString()}</span>
+                          <span className="capitalize">{p.method}</span>
+                          {p.reference && <span className="font-mono text-[10px] text-muted-foreground">{p.reference}</span>}
+                          <span className="font-semibold">${Number(p.amount).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayOrder(null)}>Cancelar</Button>
-            <Button onClick={registerPayment}>Registrar</Button>
+            <Button variant="outline" onClick={() => setPayOrder(null)}>Cerrar</Button>
+            {payOrder && (payOrder.total || 0) - (payOrder.paid_amount || 0) > 0 && (
+              <Button onClick={registerPayment}>Registrar pago</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
