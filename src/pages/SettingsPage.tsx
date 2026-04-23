@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MfaSettings } from "@/components/settings/MfaSettings";
 
 export default function SettingsPage() {
   const { i18n, t } = useTranslation();
