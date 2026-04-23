@@ -42,6 +42,8 @@ export default function Orders() {
   const [payOrder, setPayOrder] = useState<Order | null>(null);
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("transferencia");
+  const [payReference, setPayReference] = useState("");
+  const [payHistory, setPayHistory] = useState<any[]>([]);
 
   const load = () => {
     supabase.from("orders").select("*, clients(name, rut, phone, city)").order("created_at", { ascending: false }).then(({ data }) => setOrders((data as any) || []));
