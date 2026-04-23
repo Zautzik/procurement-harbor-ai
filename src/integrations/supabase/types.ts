@@ -904,6 +904,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_reservation: {
+        Args: { _reservation_id: string }
+        Returns: boolean
+      }
       get_available_stock: {
         Args: { _sku_id: string; _warehouse_id: string }
         Returns: number
@@ -916,6 +920,20 @@ export type Database = {
         Returns: boolean
       }
       is_manager_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      release_reservation: {
+        Args: { _reservation_id: string }
+        Returns: boolean
+      }
+      reserve_stock: {
+        Args: {
+          _expires_minutes?: number
+          _order_id: string
+          _quantity: number
+          _sku_id: string
+          _warehouse_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       ai_action_status: "pending" | "approved" | "rejected"
