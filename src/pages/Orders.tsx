@@ -42,6 +42,8 @@ export default function Orders() {
   const [payOrder, setPayOrder] = useState<Order | null>(null);
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("transferencia");
+  const [payReference, setPayReference] = useState("");
+  const [payHistory, setPayHistory] = useState<any[]>([]);
 
   const load = () => {
     supabase.from("orders").select("*, clients(name, rut, phone, city)").order("created_at", { ascending: false }).then(({ data }) => setOrders((data as any) || []));
@@ -70,22 +72,33 @@ export default function Orders() {
     window.open(whatsappShareUrl(phone, o.id, o.total || 0), "_blank");
   };
 
+  const openPayment = async (o: Order) => {
+    setPayOrder(o); setPayAmount(""); setPayReference("");
+    const { data } = await supabase.from("payments").select("*").eq("order_id", o.id).order("paid_at", { ascending: false });
+    setPayHistory(data || []);
+  };
+
   const registerPayment = async () => {
     if (!payOrder) return;
     const amount = parseFloat(payAmount);
     if (!amount || amount <= 0) return toast.error("Monto inválido");
-    const newPaid = (payOrder.paid_amount || 0) + amount;
-    const fullyPaid = newPaid >= (payOrder.total || 0);
-    const { error } = await supabase.from("orders").update({
-      paid_amount: newPaid, payment_method: payMethod,
-      paid_at: fullyPaid ? new Date().toISOString() : null,
-      status: fullyPaid ? "pagado" : payOrder.status,
-    }).eq("id", payOrder.id);
-    if (error) return toast.error(error.message);
+    const balance = (payOrder.total || 0) - (payOrder.paid_amount || 0);
+    if (amount > balance + 0.01) return toast.error(`Excede saldo ($${balance.toLocaleString()})`);
+
     const user = (await supabase.auth.getUser()).data.user;
-    await supabase.from("audit_log").insert({ action: "payment_registered", entity_type: "order", entity_id: payOrder.id, user_id: user?.id, performed_by: "human", details: { amount, method: payMethod } });
-    toast.success(fullyPaid ? "Pedido pagado completo ✅" : `Abono de $${amount.toLocaleString()} registrado`);
-    setPayOrder(null); setPayAmount("");
+    const { error } = await supabase.from("payments").insert({
+      order_id: payOrder.id, amount, method: payMethod,
+      reference: payReference || null, recorded_by: user?.id, currency: "CLP",
+    });
+    if (error) return toast.error(error.message);
+
+    const fullyPaid = amount >= balance - 0.01;
+    if (fullyPaid) {
+      await supabase.from("orders").update({ status: "pagado" }).eq("id", payOrder.id);
+    }
+    await supabase.from("audit_log").insert({ action: "payment_registered", entity_type: "order", entity_id: payOrder.id, user_id: user?.id, performed_by: "human", details: { amount, method: payMethod, reference: payReference } });
+    toast.success(fullyPaid ? "Pedido saldado completo" : `Abono de $${amount.toLocaleString()} registrado`);
+    setPayOrder(null); setPayAmount(""); setPayReference("");
     load();
   };
 
@@ -140,7 +153,7 @@ export default function Orders() {
                         <TableCell className="text-muted-foreground text-xs">{new Date(o.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPayOrder(o)} title="Registrar pago"><DollarSign className="h-3.5 w-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPayment(o)} title="Registrar pago"><DollarSign className="h-3.5 w-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleInvoice(o.id)} title="Factura PDF"><FileDown className="h-3.5 w-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleWhatsapp(o)} title="WhatsApp"><MessageCircle className="h-3.5 w-3.5" /></Button>
                           </div>
@@ -184,23 +197,76 @@ export default function Orders() {
       </Tabs>
 
       <Dialog open={!!payOrder} onOpenChange={(o) => !o && setPayOrder(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Registrar Pago</DialogTitle></DialogHeader>
-          {payOrder && (
-            <div className="space-y-3">
-              <div className="text-sm">Pedido <b>{payOrder.id.slice(0, 8)}</b> · Total: ${(payOrder.total || 0).toLocaleString()} · Saldo: ${((payOrder.total || 0) - (payOrder.paid_amount || 0)).toLocaleString()}</div>
-              <div><Label>Monto del pago</Label><Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="0" /></div>
-              <div><Label>Método</Label>
-                <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="w-full border rounded px-3 py-2 text-sm bg-background">
-                  <option value="transferencia">Transferencia</option><option value="efectivo">Efectivo</option>
-                  <option value="tarjeta">Tarjeta</option><option value="cheque">Cheque</option>
-                </select>
+          {payOrder && (() => {
+            const total = payOrder.total || 0;
+            const paid = payOrder.paid_amount || 0;
+            const balance = total - paid;
+            const pct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Pedido <span className="font-mono">{payOrder.id.slice(0, 8)}</span></span>
+                    <span>{pct}% pagado</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span>Pagado: <b className="text-primary">${paid.toLocaleString()}</b></span>
+                    <span>Saldo: <b className={balance > 0 ? "text-destructive" : "text-primary"}>${balance.toLocaleString()}</b></span>
+                    <span>Total: <b>${total.toLocaleString()}</b></span>
+                  </div>
+                </div>
+
+                {balance > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2"><Label>Monto del pago</Label>
+                      <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="0" />
+                      <div className="flex gap-1 mt-1">
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => setPayAmount(String(Math.round(balance / 2)))}>50%</Button>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => setPayAmount(String(balance))}>Saldo total</Button>
+                      </div>
+                    </div>
+                    <div><Label>Método</Label>
+                      <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="w-full border rounded px-3 py-2 text-sm bg-background">
+                        <option value="transferencia">Transferencia</option><option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option><option value="cheque">Cheque</option>
+                      </select>
+                    </div>
+                    <div><Label>Referencia</Label>
+                      <Input value={payReference} onChange={(e) => setPayReference(e.target.value)} placeholder="N° comprobante" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-primary">Pedido saldado completo.</div>
+                )}
+
+                {payHistory.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground">Historial ({payHistory.length})</div>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {payHistory.map((p) => (
+                        <div key={p.id} className="flex items-center justify-between text-xs border rounded px-2 py-1">
+                          <span className="text-muted-foreground">{new Date(p.paid_at).toLocaleDateString()}</span>
+                          <span className="capitalize">{p.method}</span>
+                          {p.reference && <span className="font-mono text-[10px] text-muted-foreground">{p.reference}</span>}
+                          <span className="font-semibold">${Number(p.amount).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayOrder(null)}>Cancelar</Button>
-            <Button onClick={registerPayment}>Registrar</Button>
+            <Button variant="outline" onClick={() => setPayOrder(null)}>Cerrar</Button>
+            {payOrder && (payOrder.total || 0) - (payOrder.paid_amount || 0) > 0 && (
+              <Button onClick={registerPayment}>Registrar pago</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
