@@ -26,6 +26,8 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
+          deep: "hsl(var(--primary-deep))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -50,7 +52,9 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          elevated: "hsl(var(--card-elevated))",
         },
+        info: "hsl(var(--info))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -76,6 +80,25 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-surface": "var(--gradient-surface)",
+        "gradient-steel": "var(--gradient-steel)",
+        "gradient-glow": "var(--gradient-glow)",
+      },
+      boxShadow: {
+        xs: "var(--shadow-xs)",
+        "soft-sm": "var(--shadow-sm)",
+        "soft-md": "var(--shadow-md)",
+        "soft-lg": "var(--shadow-lg)",
+        "soft-xl": "var(--shadow-xl)",
+        glow: "var(--shadow-glow)",
+        inset: "var(--shadow-inset)",
+      },
+      transitionTimingFunction: {
+        "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",
+        spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -89,11 +112,21 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.6" },
         },
+        "fade-in-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "fade-in-up": "fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        shimmer: "shimmer 2.5s linear infinite",
       },
     },
   },
