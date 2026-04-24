@@ -5,7 +5,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const common = {
   es: {
     dashboard: "Dashboard", chat: "Chat IA", inventory: "Inventario", warehouses: "Bodegas", shipments: "Embarques",
-    trends: "Trend Radar", orders: "Pedidos", aiAgent: "Agente IA", settings: "Configuración",
+    trends: "Trend Radar", orders: "Pedidos", aiAgent: "Agente IA", costing: "Costeo", settings: "Configuración",
     logout: "Cerrar Sesión", newSku: "Nuevo SKU", newOrder: "Nuevo Pedido", newShipment: "Nuevo Embarque",
     newClient: "Nuevo Cliente", export: "Exportar CSV", import: "Importar", save: "Guardar",
     cancel: "Cancelar", stock: "Stock", price: "Precio", language: "Idioma",
@@ -17,7 +17,7 @@ const common = {
   },
   en: {
     dashboard: "Dashboard", chat: "AI Chat", inventory: "Inventory", warehouses: "Warehouses", shipments: "Shipments",
-    trends: "Trend Radar", orders: "Orders", aiAgent: "AI Agent", settings: "Settings",
+    trends: "Trend Radar", orders: "Orders", aiAgent: "AI Agent", costing: "Costing", settings: "Settings",
     logout: "Sign Out", newSku: "New SKU", newOrder: "New Order", newShipment: "New Shipment",
     newClient: "New Client", export: "Export CSV", import: "Import", save: "Save",
     cancel: "Cancel", stock: "Stock", price: "Price", language: "Language",
@@ -29,7 +29,7 @@ const common = {
   },
   zh: {
     dashboard: "仪表盘", chat: "AI 聊天", inventory: "库存", warehouses: "仓库", shipments: "货运",
-    trends: "趋势雷达", orders: "订单", aiAgent: "AI 代理", settings: "设置",
+    trends: "趋势雷达", orders: "订单", aiAgent: "AI 代理", costing: "成本核算", settings: "设置",
     logout: "退出登录", newSku: "新建 SKU", newOrder: "新建订单", newShipment: "新建货运",
     newClient: "新建客户", export: "导出 CSV", import: "导入", save: "保存",
     cancel: "取消", stock: "库存", price: "价格", language: "语言",

@@ -13,6 +13,7 @@ import Shipments from "@/pages/Shipments";
 import TrendRadar from "@/pages/TrendRadar";
 import Orders from "@/pages/Orders";
 import AIAgent from "@/pages/AIAgent";
+import Costing from "@/pages/Costing";
 import SettingsPage from "@/pages/SettingsPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -43,6 +44,7 @@ function ProtectedRoutes() {
         <Route path="/trends" element={<TrendRadar />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/ai-agent" element={<AIAgent />} />
+        <Route path="/costing" element={<Costing />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<NotFound />} />
