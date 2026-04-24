@@ -8,6 +8,7 @@ import {
   FileText,
   Settings,
   Bot,
+  Calculator,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -40,6 +41,7 @@ export function AppSidebar() {
   const intelligence = [
     { title: t("chat"), url: "/chat", icon: MessageSquare },
     { title: t("trends"), url: "/trends", icon: TrendingUp },
+    { title: t("costing"), url: "/costing", icon: Calculator },
     { title: t("aiAgent"), url: "/ai-agent", icon: Bot },
   ];
   const bottomItems = [{ title: t("settings"), url: "/settings", icon: Settings }];

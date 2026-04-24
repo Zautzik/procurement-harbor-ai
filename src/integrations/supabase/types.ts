@@ -218,6 +218,111 @@ export type Database = {
         }
         Relationships: []
       }
+      import_cost_components: {
+        Row: {
+          amount: number
+          amount_clp: number | null
+          category: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          fx_rate_to_clp: number | null
+          id: string
+          is_percentage: boolean
+          notes: string | null
+          percentage_of: number | null
+          shipment_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          amount_clp?: number | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          fx_rate_to_clp?: number | null
+          id?: string
+          is_percentage?: boolean
+          notes?: string | null
+          percentage_of?: number | null
+          shipment_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_clp?: number | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          fx_rate_to_clp?: number | null
+          id?: string
+          is_percentage?: boolean
+          notes?: string | null
+          percentage_of?: number | null
+          shipment_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      landed_costs: {
+        Row: {
+          allocated_overhead_usd: number
+          computed_at: string
+          created_at: string
+          id: string
+          landed_unit_cost_clp: number
+          landed_unit_cost_usd: number
+          projected_margin_clp: number
+          projected_revenue_clp: number
+          quantity: number
+          shipment_id: string
+          shipment_item_id: string
+          sku_id: string
+          suggested_retail_clp: number
+          target_margin_pct: number
+          unit_fob_usd: number
+        }
+        Insert: {
+          allocated_overhead_usd?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          landed_unit_cost_clp?: number
+          landed_unit_cost_usd?: number
+          projected_margin_clp?: number
+          projected_revenue_clp?: number
+          quantity?: number
+          shipment_id: string
+          shipment_item_id: string
+          sku_id: string
+          suggested_retail_clp?: number
+          target_margin_pct?: number
+          unit_fob_usd?: number
+        }
+        Update: {
+          allocated_overhead_usd?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          landed_unit_cost_clp?: number
+          landed_unit_cost_usd?: number
+          projected_margin_clp?: number
+          projected_revenue_clp?: number
+          quantity?: number
+          shipment_id?: string
+          shipment_item_id?: string
+          sku_id?: string
+          suggested_retail_clp?: number
+          target_margin_pct?: number
+          unit_fob_usd?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -411,6 +516,57 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_projections: {
+        Row: {
+          avg_discount_pct: number
+          created_at: string
+          created_by: string | null
+          expected_cogs_clp: number
+          expected_margin_clp: number
+          expected_revenue_clp: number
+          id: string
+          margin_pct: number
+          notes: string | null
+          payback_months: number | null
+          scenario: string
+          sell_through_pct: number
+          shipment_id: string
+          updated_at: string
+        }
+        Insert: {
+          avg_discount_pct?: number
+          created_at?: string
+          created_by?: string | null
+          expected_cogs_clp?: number
+          expected_margin_clp?: number
+          expected_revenue_clp?: number
+          id?: string
+          margin_pct?: number
+          notes?: string | null
+          payback_months?: number | null
+          scenario?: string
+          sell_through_pct?: number
+          shipment_id: string
+          updated_at?: string
+        }
+        Update: {
+          avg_discount_pct?: number
+          created_at?: string
+          created_by?: string | null
+          expected_cogs_clp?: number
+          expected_margin_clp?: number
+          expected_revenue_clp?: number
+          id?: string
+          margin_pct?: number
+          notes?: string | null
+          payback_months?: number | null
+          scenario?: string
+          sell_through_pct?: number
+          shipment_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shipment_documents: {
         Row: {
           created_at: string
@@ -482,8 +638,11 @@ export type Database = {
       }
       shipments: {
         Row: {
+          cost_allocation_method: Database["public"]["Enums"]["cost_allocation_method"]
           created_at: string
+          currency: string
           eta: string | null
+          fx_rate_to_clp: number | null
           id: string
           item_count: number | null
           notes: string | null
@@ -493,10 +652,15 @@ export type Database = {
           supplier: string
           updated_at: string
           value: number | null
+          volume_m3: number | null
+          weight_kg: number | null
         }
         Insert: {
+          cost_allocation_method?: Database["public"]["Enums"]["cost_allocation_method"]
           created_at?: string
+          currency?: string
           eta?: string | null
+          fx_rate_to_clp?: number | null
           id?: string
           item_count?: number | null
           notes?: string | null
@@ -506,10 +670,15 @@ export type Database = {
           supplier: string
           updated_at?: string
           value?: number | null
+          volume_m3?: number | null
+          weight_kg?: number | null
         }
         Update: {
+          cost_allocation_method?: Database["public"]["Enums"]["cost_allocation_method"]
           created_at?: string
+          currency?: string
           eta?: string | null
+          fx_rate_to_clp?: number | null
           id?: string
           item_count?: number | null
           notes?: string | null
@@ -519,6 +688,8 @@ export type Database = {
           supplier?: string
           updated_at?: string
           value?: number | null
+          volume_m3?: number | null
+          weight_kg?: number | null
         }
         Relationships: []
       }
@@ -938,6 +1109,11 @@ export type Database = {
     Enums: {
       ai_action_status: "pending" | "approved" | "rejected"
       app_role: "admin" | "manager" | "warehouse" | "readonly"
+      cost_allocation_method:
+        | "by_value"
+        | "by_quantity"
+        | "by_volume"
+        | "by_weight"
       order_status:
         | "borrador"
         | "confirmado"
@@ -1079,6 +1255,12 @@ export const Constants = {
     Enums: {
       ai_action_status: ["pending", "approved", "rejected"],
       app_role: ["admin", "manager", "warehouse", "readonly"],
+      cost_allocation_method: [
+        "by_value",
+        "by_quantity",
+        "by_volume",
+        "by_weight",
+      ],
       order_status: [
         "borrador",
         "confirmado",
