@@ -266,9 +266,9 @@ export default function Costing() {
     if (selectedId) loadShipmentDetail(selectedId);
   }
 
-  async function updateShipmentMeta(patch: Partial<Shipment>) {
+  async function updateShipmentMeta(patch: Record<string, any>) {
     if (!selectedId) return;
-    const { error } = await supabase.from("shipments").update(patch).eq("id", selectedId);
+    const { error } = await supabase.from("shipments").update(patch as any).eq("id", selectedId);
     if (error) return toast.error(error.message);
     loadShipments();
   }
