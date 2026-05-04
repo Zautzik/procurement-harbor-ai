@@ -33,6 +33,16 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Cell,
+  Tooltip as RTooltip,
+  ReferenceLine,
+} from "recharts";
 
 type Shipment = {
   id: string;
@@ -408,6 +418,24 @@ export default function Costing() {
                 tone={projection.marginPct >= 40 ? "success" : projection.marginPct >= 20 ? "warning" : "danger"}
               />
             </div>
+
+            {/* Waterfall: FOB → Landed → Retail → Margin */}
+            <Card className="border-border/60 bg-card/40 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-heading text-sm uppercase tracking-wider text-muted-foreground">
+                  Cascada Financiera · FOB → Margen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Waterfall
+                  fobClp={totals.fobClp}
+                  overheadClp={totals.overheadClp}
+                  revenueClp={projection.revenue}
+                  marginClp={projection.margin}
+                  landedClp={totals.landedClp}
+                />
+              </CardContent>
+            </Card>
 
             {/* Shipment meta */}
             <Card className="border-border/60 bg-card/40 backdrop-blur-sm">
