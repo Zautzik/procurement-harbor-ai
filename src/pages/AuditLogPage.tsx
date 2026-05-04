@@ -99,7 +99,7 @@ export default function AuditLogPage() {
                       {new Date(log.created_at).toLocaleString("es-CL")}
                     </span>
                   </div>
-                  {log.details && Object.keys(log.details).length > 0 && (
+                  {log.details && Object.keys(log.details as Record<string, unknown>).length > 0 && (
                     <pre className="mt-1.5 text-[10px] text-muted-foreground bg-muted/30 rounded px-2 py-1 overflow-x-auto font-mono">
                       {JSON.stringify(log.details, null, 0)}
                     </pre>
