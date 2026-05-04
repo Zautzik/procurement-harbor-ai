@@ -14,6 +14,7 @@ const common = {
     stockValue: "Valor Stock", inTransit: "En Tránsito", lowStock: "Stock Bajo",
     activity: "Actividad", orderFunnel: "Embudo de Pedidos", topSkus: "Top 5 SKUs por Valor",
     stockByFabric: "Stock por Tela", profile: "Perfil", roles: "Roles", search: "Buscar",
+    audit: "Auditoría",
   },
   en: {
     dashboard: "Dashboard", chat: "AI Chat", inventory: "Inventory", warehouses: "Warehouses", shipments: "Shipments",
@@ -26,6 +27,7 @@ const common = {
     stockValue: "Stock Value", inTransit: "In Transit", lowStock: "Low Stock",
     activity: "Activity", orderFunnel: "Order Funnel", topSkus: "Top 5 SKUs by Value",
     stockByFabric: "Stock by Fabric", profile: "Profile", roles: "Roles", search: "Search",
+    audit: "Audit Log",
   },
   zh: {
     dashboard: "仪表盘", chat: "AI 聊天", inventory: "库存", warehouses: "仓库", shipments: "货运",
@@ -38,6 +40,7 @@ const common = {
     stockValue: "库存价值", inTransit: "运输中", lowStock: "库存不足",
     activity: "活动", orderFunnel: "订单漏斗", topSkus: "前5名 SKU",
     stockByFabric: "按面料库存", profile: "个人资料", roles: "角色", search: "搜索",
+    audit: "审计日志",
   },
 };
 

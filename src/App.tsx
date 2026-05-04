@@ -14,6 +14,7 @@ import TrendRadar from "@/pages/TrendRadar";
 import Orders from "@/pages/Orders";
 import AIAgent from "@/pages/AIAgent";
 import Costing from "@/pages/Costing";
+import AuditLogPage from "@/pages/AuditLogPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
