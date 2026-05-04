@@ -45,6 +45,7 @@ function ProtectedRoutes() {
         <Route path="/orders" element={<Orders />} />
         <Route path="/ai-agent" element={<AIAgent />} />
         <Route path="/costing" element={<Costing />} />
+        <Route path="/audit" element={<AuditLogPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<NotFound />} />
