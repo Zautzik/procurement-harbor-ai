@@ -1091,6 +1091,7 @@ export type Database = {
         Returns: boolean
       }
       is_manager_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      release_expired_reservations: { Args: never; Returns: number }
       release_reservation: {
         Args: { _reservation_id: string }
         Returns: boolean

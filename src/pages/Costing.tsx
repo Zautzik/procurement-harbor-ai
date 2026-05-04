@@ -33,6 +33,16 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Cell,
+  Tooltip as RTooltip,
+  ReferenceLine,
+} from "recharts";
 
 type Shipment = {
   id: string;
@@ -408,6 +418,24 @@ export default function Costing() {
                 tone={projection.marginPct >= 40 ? "success" : projection.marginPct >= 20 ? "warning" : "danger"}
               />
             </div>
+
+            {/* Waterfall: FOB → Landed → Retail → Margin */}
+            <Card className="border-border/60 bg-card/40 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-heading text-sm uppercase tracking-wider text-muted-foreground">
+                  Cascada Financiera · FOB → Margen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Waterfall
+                  fobClp={totals.fobClp}
+                  overheadClp={totals.overheadClp}
+                  revenueClp={projection.revenue}
+                  marginClp={projection.margin}
+                  landedClp={totals.landedClp}
+                />
+              </CardContent>
+            </Card>
 
             {/* Shipment meta */}
             <Card className="border-border/60 bg-card/40 backdrop-blur-sm">
@@ -828,6 +856,83 @@ function SliderControl({
         </span>
       </div>
       <Slider value={[value]} onValueChange={onChange} max={max} step={1} />
+    </div>
+  );
+}
+
+function Waterfall({
+  fobClp,
+  overheadClp,
+  landedClp,
+  revenueClp,
+  marginClp,
+}: {
+  fobClp: number;
+  overheadClp: number;
+  landedClp: number;
+  revenueClp: number;
+  marginClp: number;
+}) {
+  // Build stacked waterfall with invisible base + visible delta
+  const data = [
+    { name: "FOB", base: 0, value: fobClp, fill: "hsl(var(--primary))" },
+    { name: "Overhead", base: fobClp, value: overheadClp, fill: "hsl(var(--warning))" },
+    { name: "Landed", base: 0, value: landedClp, fill: "hsl(var(--accent))" },
+    {
+      name: "Ingreso Esp.",
+      base: 0,
+      value: revenueClp,
+      fill: "hsl(var(--chart-2))",
+    },
+    {
+      name: "Margen",
+      base: 0,
+      value: Math.max(0, marginClp),
+      fill: marginClp >= 0 ? "hsl(var(--success))" : "hsl(var(--destructive))",
+    },
+  ];
+
+  const fmt = (n: number) =>
+    n >= 1_000_000
+      ? `$${(n / 1_000_000).toFixed(1)}M`
+      : n >= 1_000
+        ? `$${(n / 1_000).toFixed(0)}k`
+        : `$${n.toFixed(0)}`;
+
+  return (
+    <div className="h-[260px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 16, right: 16, left: 16, bottom: 8 }}>
+          <XAxis
+            dataKey="name"
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            axisLine={{ stroke: "hsl(var(--border))" }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={fmt}
+          />
+          <RTooltip
+            contentStyle={{
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            formatter={(v: any) => fmt(Number(v))}
+          />
+          <ReferenceLine y={0} stroke="hsl(var(--border))" />
+          <Bar dataKey="base" stackId="w" fill="transparent" />
+          <Bar dataKey="value" stackId="w" radius={[6, 6, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.fill} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }

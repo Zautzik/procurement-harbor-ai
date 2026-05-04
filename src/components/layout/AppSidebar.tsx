@@ -44,7 +44,10 @@ export function AppSidebar() {
     { title: t("costing"), url: "/costing", icon: Calculator },
     { title: t("aiAgent"), url: "/ai-agent", icon: Bot },
   ];
-  const bottomItems = [{ title: t("settings"), url: "/settings", icon: Settings }];
+  const bottomItems = [
+    { title: t("audit"), url: "/audit", icon: History },
+    { title: t("settings"), url: "/settings", icon: Settings },
+  ];
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();

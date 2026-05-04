@@ -4,6 +4,8 @@ import { AlertsBell } from "./AlertsBell";
 import { Outlet } from "react-router-dom";
 import { useLanguageSync } from "@/hooks/useLanguageSync";
 import { useEffect, useState } from "react";
+import { CommandPalette, CommandPaletteTrigger } from "@/components/CommandPalette";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 export function AppLayout() {
   useLanguageSync();
@@ -28,6 +30,7 @@ export function AppLayout() {
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3">
+              <CommandPaletteTrigger />
               <div className="hidden items-center gap-3 rounded-lg border border-border/60 bg-card/50 px-3 py-1.5 md:flex">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   CLP/USD
@@ -45,6 +48,8 @@ export function AppLayout() {
             <Outlet />
           </main>
         </div>
+        <CommandPalette />
+        <OnboardingTour />
       </div>
     </SidebarProvider>
   );
